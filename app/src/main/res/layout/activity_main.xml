@@ -1,81 +1,90 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".client.view.main.MainActivity">
+    tools:context="edu.byu.cs.tweeter.client.view.main.MainActivity">
 
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:theme="@style/AppTheme.AppBarOverlay">
 
-        <Space
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="20dp"/>
-
-        <RelativeLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
-
-            <ImageView
-                android:id="@+id/userImage"
-                android:layout_width="100dp"
-                android:layout_height="100dp"
-                android:layout_centerVertical="true"
-                android:layout_alignParentStart="true"
-                android:contentDescription="@string/userImageContentDescription" />
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
 
             <LinearLayout
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:layout_toEndOf="@+id/userImage"
-                android:layout_centerVertical="true">
+                android:orientation="horizontal"
+                android:layout_marginTop="5dp">
 
-                <TextView
-                    android:id="@+id/userName"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/homePageTitle"
-                    android:textSize="24sp"/>
-
-                <TextView
-                    android:id="@+id/userAlias"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/homePageTitle"
-                    android:textSize="24sp"/>
+                <ImageView
+                    android:id="@+id/userImage"
+                    android:layout_width="100dp"
+                    android:layout_height="100dp"
+                    android:layout_centerVertical="true"
+                    android:layout_alignParentStart="true"
+                    android:contentDescription="@string/userImageContentDescription" />
 
                 <LinearLayout
                     android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
-                    android:orientation="horizontal">
-                    <TextView
-                        android:id="@+id/followeeCount"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/followeeCount"
-                        android:paddingHorizontal="5sp"/>
-
-                    <Space
-                        android:layout_width="5sp"
-                        android:layout_height="wrap_content"/>
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_toEndOf="@+id/userImage"
+                    android:layout_centerVertical="true">
 
                     <TextView
-                        android:id="@+id/followerCount"
+                        android:id="@+id/userName"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="@string/followerCount"
-                        android:paddingHorizontal="5sp"/>
+                        android:text="@string/homePageTitle"
+                        android:textSize="24sp" />
+
+                    <TextView
+                        android:id="@+id/userAlias"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/homePageTitle"
+                        android:textSize="24sp" />
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/followeeCount"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/followeeCount"
+                            android:paddingHorizontal="5sp" />
+
+                        <Space
+                            android:layout_width="5sp"
+                            android:layout_height="wrap_content" />
+
+                        <TextView
+                            android:id="@+id/followerCount"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/followerCount"
+                            android:paddingHorizontal="5sp" />
+
+                    </LinearLayout>
 
                 </LinearLayout>
-
             </LinearLayout>
 
-        </RelativeLayout>
+            <Button
+                android:id="@+id/followButton"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+
+        </LinearLayout>
 
 
         <com.google.android.material.tabs.TabLayout

@@ -55,6 +55,10 @@ public class Status implements Serializable {
         return timestamp;
     }
 
+    public String getFormattedDate() {
+        return new SimpleDateFormat("E MMM d k:mm:ss z y", Locale.US).format(new Date(timestamp));
+    }
+
     public String getPost() {
         return post;
     }
