@@ -31,13 +31,8 @@ import edu.byu.cs.tweeter.util.Pair;
  * Contains the business logic for getting the users a user is following.
  */
 public class FollowService {
-
-    // TODO: CALL DAO CLASSES
-
     private FollowDAOInterface followDAO;
-
     private UserDAOInterface userDAO;
-
 
     public FollowService(MainDAOFactoryInterface mainDAOFactory) {
         this.followDAO = mainDAOFactory.getFollowDAO();
@@ -61,17 +56,6 @@ public class FollowService {
             throw new RuntimeException("[Bad Request] Request needs to have a positive limit");
         }
         return followDAO.getFollowees(request);
-    }
-
-    /**
-     * Returns an instance of {@link FollowDAO}. Allows mocking of the FollowDAO class
-     * for testing purposes. All usages of FollowDAO should get their FollowDAO
-     * instance from this method to allow for mocking of the instance.
-     *
-     * @return the instance.
-     */
-    FollowDAO getFollowingDAO() {
-        return new FollowDAO();
     }
 
     public FollowersCountResponse getFollowersCount(FollowersCountRequest followersCountRequest) {
@@ -102,9 +86,9 @@ public class FollowService {
         if(followRequest.getToFollow() == null) {
             throw new RuntimeException("[Bad Request] Request needs to have a target user.");
         }
-//        else if(followRequest.getAuthToken() == null) { // TODO: This is here due to auth failure aws
-//            throw new RuntimeException("[Bad Request] Request needs to have an auth token.");
-//        }
+        else if(followRequest.getAuthToken() == null) {
+            throw new RuntimeException("[Bad Request] Request needs to have an auth token.");
+        }
         User toFollow = userDAO.getUser(new UserRequest(followRequest.getToFollow(), followRequest.getAuthToken())).getUser();
         User userThatFollows = userDAO.getUser(new UserRequest(followRequest.getCurrentUser(), followRequest.getAuthToken())).getUser();
         return followDAO.follow(followRequest, userThatFollows, toFollow);
@@ -114,9 +98,9 @@ public class FollowService {
         if (unfollowRequest.getToUnfollow() == null) {
             throw new RuntimeException("[Bad Request] Request needs to have a target user.");
         }
-//        else if(unfollowRequest.getAuthToken() == null) {
-//            throw new RuntimeException("[Bad Request] Request needs to have an auth token.");
-//        }
+        else if(unfollowRequest.getAuthToken() == null) {
+            throw new RuntimeException("[Bad Request] Request needs to have an auth token.");
+        }
         return followDAO.unfollow(unfollowRequest);
     }
 
