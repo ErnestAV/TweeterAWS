@@ -1,16 +1,15 @@
 package edu.byu.cs.tweeter.server.lambda;
 
 import com.amazonaws.services.lambda.runtime.Context;
-import com.amazonaws.services.lambda.runtime.RequestHandler;
 
 import edu.byu.cs.tweeter.model.net.request.UserRequest;
 import edu.byu.cs.tweeter.model.net.response.UserResponse;
 import edu.byu.cs.tweeter.server.service.UserService;
 
-public class GetUserHandler implements RequestHandler<UserRequest, UserResponse> {
+public class GetUserHandler extends BaseHandler<UserRequest, UserResponse> {
     @Override
     public UserResponse handleRequest(UserRequest userRequest, Context context) {
-        UserService userService = new UserService();
+        UserService userService = new UserService(factoryDAO);
         return userService.getUser(userRequest);
     }
 }
