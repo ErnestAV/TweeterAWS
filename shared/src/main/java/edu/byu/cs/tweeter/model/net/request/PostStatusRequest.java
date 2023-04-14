@@ -1,20 +1,22 @@
 package edu.byu.cs.tweeter.model.net.request;
 
+import edu.byu.cs.tweeter.model.domain.Status;
+
 public class PostStatusRequest {
-    private String status;
+    private Status status;
+    // Pass of Status Object
     private String authToken;
 
-
     private PostStatusRequest() {}
-    public PostStatusRequest(String status, String authToken) {
+    public PostStatusRequest(Status status, String authToken) {
         this.status = status;
         this.authToken = authToken;
     }
-    public String getStatus() {
+    public Status getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(Status status) {
         this.status = status;
     }
 

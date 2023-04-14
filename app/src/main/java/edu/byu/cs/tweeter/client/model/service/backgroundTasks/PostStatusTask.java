@@ -31,7 +31,7 @@ public class PostStatusTask extends AuthenticatedTask {
     @Override
     protected void runTask() {
         try {
-            PostStatusRequest request = new PostStatusRequest(status.getPost(), authToken.getToken());
+            PostStatusRequest request = new PostStatusRequest(status, authToken.getToken());
             PostStatusResponse response = facade.postStatus(request, "\\getpoststatus");
             if (response.isSuccess()) {
                 sendSuccessMessage();

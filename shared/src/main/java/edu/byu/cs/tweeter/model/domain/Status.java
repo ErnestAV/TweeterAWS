@@ -32,6 +32,8 @@ public class Status implements Serializable {
      */
     public List<String> mentions;
 
+    public String userAlias;
+
     public Status() {
     }
 
@@ -41,6 +43,14 @@ public class Status implements Serializable {
         this.timestamp = timestamp;
         this.urls = urls;
         this.mentions = mentions;
+    }
+
+    public Status(String post, Long timestamp, List<String> urls, List<String> mentions, String userAlias) {
+        this.post = post;
+        this.timestamp = timestamp;
+        this.urls = urls;
+        this.mentions = mentions;
+        this.userAlias = userAlias;
     }
 
     public void setUser(User user) {
@@ -69,6 +79,13 @@ public class Status implements Serializable {
 
     public List<String> getMentions() {
         return mentions;
+    }
+
+    public String getUserAlias() {
+        return userAlias;
+    }
+    public void setUserAlias(String userAlias) {
+        this.userAlias = userAlias;
     }
 
     @Override

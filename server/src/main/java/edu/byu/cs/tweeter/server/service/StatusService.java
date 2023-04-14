@@ -58,30 +58,9 @@ public class StatusService {
         } else if(storyRequest.getLimit() <= 0) {
             throw new RuntimeException("[Bad Request] Request needs to have a positive limit.");
         }
-        // TODO: Change this in milestone 4.
 
-        //Pair<List<Status>, Boolean> storyPair = FakeData.getInstance().getPageOfStatus(request.getLastStatus(), request.getLimit());
-        assert storyRequest.getLimit() > 0;
-        assert storyRequest.getTargetUser() != null;
 
-        List<Status> allStatuses = FakeData.getInstance().getFakeStatuses();
-        List<Status> responseStory = new ArrayList<>(storyRequest.getLimit());
-
-        boolean hasMorePages = false;
-
-        if(storyRequest.getLimit() > 0) {
-            if (allStatuses != null) {
-                int storyIndex = getStatusStartingIndex(storyRequest.getLastStatus(),allStatuses);
-
-                for(int limitCounter = 0; storyIndex < allStatuses.size() && limitCounter < storyRequest.getLimit(); storyIndex++, limitCounter++) {
-                    responseStory.add(allStatuses.get(storyIndex));
-                }
-
-                hasMorePages = storyIndex < allStatuses.size();
-            }
-        }
-
-        return new StoryResponse(responseStory, hasMorePages);
+        return new StoryResponse("jh");
     }
 
     private int getStatusStartingIndex(String lastStatus, List<Status> allStatuses) {

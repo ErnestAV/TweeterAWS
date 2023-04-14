@@ -19,6 +19,9 @@ import edu.byu.cs.tweeter.model.net.response.FollowingResponse;
 import edu.byu.cs.tweeter.model.net.response.IsFollowerResponse;
 import edu.byu.cs.tweeter.model.net.response.UnfollowResponse;
 import edu.byu.cs.tweeter.server.dao.FollowDAO;
+import edu.byu.cs.tweeter.server.dao.FollowDAOInterface;
+import edu.byu.cs.tweeter.server.dao.MainDAOFactoryInterface;
+import edu.byu.cs.tweeter.server.dao.dynamoDAO.FollowDynamoDAO;
 import edu.byu.cs.tweeter.util.FakeData;
 import edu.byu.cs.tweeter.util.Pair;
 
@@ -26,6 +29,14 @@ import edu.byu.cs.tweeter.util.Pair;
  * Contains the business logic for getting the users a user is following.
  */
 public class FollowService {
+
+    // TODO: CALL DAO CLASSES
+
+    public FollowDAOInterface followDAO;
+
+    public FollowService(MainDAOFactoryInterface mainDAOFactory) {
+        this.followDAO = mainDAOFactory.getFollowDAO();
+    }
 
     /**
      * Returns the users that the user specified in the request is following. Uses information in
@@ -83,7 +94,8 @@ public class FollowService {
         return new FollowingCountResponse(20);
     }
 
-    public FollowResponse follow(FollowRequest followRequest) {
+    public FollowResponse follow(FollowRequest followRequest) { // TODO: UPDATE AFTER DAOS ARE FINISHED.
+        // TODO: UPDATE FOLLOWEES AND FOLLOWER COUNT AFTER A FOLLOW. UPDATE FUNCTION SHOULD BE IN THE USER DAO INTERFACE
         if(followRequest.getToFollow() == null) {
             throw new RuntimeException("[Bad Request] Request needs to have a target user.");
         }

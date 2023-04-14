@@ -35,7 +35,7 @@ public class GetStoryTask extends PagedStatusTask {
     protected void runTask() throws IOException {
         try {
             String targetUserAlias = getTargetUser() == null ? null : getTargetUser().getAlias();
-            String lastStatusPost = getLastItem() == null ? null : getLastItem().getPost();
+            Status lastStatusPost = getLastItem() == null ? null : getLastItem();
             StoryRequest request = new StoryRequest(authToken, targetUserAlias, limit, lastStatusPost);
             StoryResponse response = facade.getStory(request, "\\getstory");
             if (response.isSuccess()) {

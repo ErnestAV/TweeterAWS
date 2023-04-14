@@ -35,7 +35,7 @@ public class GetFeedTask extends PagedStatusTask {
     protected final void runTask() throws IOException { // TODO: Get authToken
         try {
             String targetUserAlias = getTargetUser() == null ? null : getTargetUser().getAlias();
-            String lastStatusPost = getLastItem() == null ? null : getLastItem().getPost();
+            Status lastStatusPost = getLastItem() == null ? null : getLastItem();
             FeedRequest request = new FeedRequest(authToken, targetUserAlias, limit, lastStatusPost);
             FeedResponse response = facade.getFeed(request, "\\getfeed");
             if (response.isSuccess()) {

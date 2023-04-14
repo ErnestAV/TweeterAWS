@@ -19,10 +19,12 @@ public class FollowTask extends AuthenticatedTask {
     /**
      * The user that is being followed.
      */
+    private final User currentUser;
     private final User followee;
 
-    public FollowTask(AuthToken authToken, User followee, Handler messageHandler) {
+    public FollowTask(AuthToken authToken, User currentUser, User followee, Handler messageHandler) {
         super(authToken, messageHandler);
+        this.currentUser = currentUser;
         this.followee = followee;
     }
 
@@ -30,7 +32,7 @@ public class FollowTask extends AuthenticatedTask {
     protected void runTask() { // TODO: Why is the authToken missing
         try {
             // PASS CURRENT USER INTO UNFOLLOW REQUEST
-            FollowRequest request = new FollowRequest(followee.getAlias(), authToken.getToken());
+            FollowRequest request = new FollowRequest(currentUser.getAlias(), followee.getAlias(), authToken.getToken());
             FollowResponse response = facade.follow(request, "\\getfollow");
             if (response.isSuccess()) {
                 sendSuccessMessage();

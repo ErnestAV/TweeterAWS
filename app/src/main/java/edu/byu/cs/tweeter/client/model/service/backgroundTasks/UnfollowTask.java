@@ -20,10 +20,13 @@ public class UnfollowTask extends AuthenticatedTask {
     /**
      * The user that is being followed.
      */
+
+    private final User currentUser;
     private final User followee;
 
-    public UnfollowTask(AuthToken authToken, User followee, Handler messageHandler) {
+    public UnfollowTask(AuthToken authToken, User currentUser, User followee, Handler messageHandler) {
         super(authToken, messageHandler);
+        this.currentUser = currentUser;
         this.followee = followee;
     }
 
@@ -31,7 +34,7 @@ public class UnfollowTask extends AuthenticatedTask {
     protected void runTask() {
         try {
             // PASS CURRENT USER INTO UNFOLLOW REQUEST
-            UnfollowRequest request = new UnfollowRequest(followee.getAlias(), authToken.getToken());
+            UnfollowRequest request = new UnfollowRequest(currentUser.getAlias(), followee.getAlias(), authToken.getToken());
             UnfollowResponse response = facade.unfollow(request, "\\getunfollow");
             if (response.isSuccess()) {
                 sendSuccessMessage();
