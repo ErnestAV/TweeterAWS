@@ -11,6 +11,7 @@ import edu.byu.cs.tweeter.model.net.request.FollowingCountRequest;
 import edu.byu.cs.tweeter.model.net.request.FollowingRequest;
 import edu.byu.cs.tweeter.model.net.request.IsFollowerRequest;
 import edu.byu.cs.tweeter.model.net.request.UnfollowRequest;
+import edu.byu.cs.tweeter.model.net.request.UserRequest;
 import edu.byu.cs.tweeter.model.net.response.FollowResponse;
 import edu.byu.cs.tweeter.model.net.response.FollowersCountResponse;
 import edu.byu.cs.tweeter.model.net.response.FollowersResponse;
@@ -21,6 +22,7 @@ import edu.byu.cs.tweeter.model.net.response.UnfollowResponse;
 import edu.byu.cs.tweeter.server.dao.FollowDAO;
 import edu.byu.cs.tweeter.server.dao.FollowDAOInterface;
 import edu.byu.cs.tweeter.server.dao.MainDAOFactoryInterface;
+import edu.byu.cs.tweeter.server.dao.UserDAOInterface;
 import edu.byu.cs.tweeter.server.dao.dynamoDAO.FollowDynamoDAO;
 import edu.byu.cs.tweeter.util.FakeData;
 import edu.byu.cs.tweeter.util.Pair;
@@ -32,10 +34,15 @@ public class FollowService {
 
     // TODO: CALL DAO CLASSES
 
-    public FollowDAOInterface followDAO;
+    private FollowDAOInterface followDAO;
+
+    private UserDAOInterface userDAO;
+
 
     public FollowService(MainDAOFactoryInterface mainDAOFactory) {
         this.followDAO = mainDAOFactory.getFollowDAO();
+        this.userDAO = mainDAOFactory.getUserDAO();
+
     }
 
     /**
@@ -53,9 +60,7 @@ public class FollowService {
         } else if(request.getLimit() <= 0) {
             throw new RuntimeException("[Bad Request] Request needs to have a positive limit");
         }
-        User lastFollowee = FakeData.getInstance().findUserByAlias(request.getLastFolloweeAlias());
-        Pair<List<User>, Boolean> result = FakeData.getInstance().getPageOfUsers(lastFollowee, request.getLimit(), null);
-        return new FollowingResponse(result.getFirst(), result.getSecond());
+        return followDAO.getFollowees(request);
     }
 
     /**
@@ -73,7 +78,7 @@ public class FollowService {
         if(followersCountRequest.getTargetUser() == null) {
             throw new RuntimeException("[Bad Request] Request needs to have a target user.");
         }
-        return new FollowersCountResponse(20);
+        return userDAO.getFollowersCount(followersCountRequest);
     }
 
     public FollowersResponse getFollowers(FollowersRequest followersRequest) {
@@ -82,38 +87,37 @@ public class FollowService {
         } else if(followersRequest.getLimit() <= 0) {
             throw new RuntimeException("[Bad Request] Request needs to have a positive limit");
         }
-        User lastFollower = FakeData.getInstance().findUserByAlias(followersRequest.getLastFollowerAlias());
-        Pair<List<User>, Boolean> result = FakeData.getInstance().getPageOfUsers(lastFollower, followersRequest.getLimit(), null);
-        return new FollowersResponse(result.getFirst(), result.getSecond());
+
+        return followDAO.getFollowers(followersRequest);
     }
 
     public FollowingCountResponse getFollowingCount(FollowingCountRequest followingCountRequest) {
         if(followingCountRequest.getTargetUser() == null) {
             throw new RuntimeException("[Bad Request] Request needs to have a target user.");
         }
-        return new FollowingCountResponse(20);
+        return userDAO.getFolloweeCount(followingCountRequest);
     }
 
-    public FollowResponse follow(FollowRequest followRequest) { // TODO: UPDATE AFTER DAOS ARE FINISHED.
-        // TODO: UPDATE FOLLOWEES AND FOLLOWER COUNT AFTER A FOLLOW. UPDATE FUNCTION SHOULD BE IN THE USER DAO INTERFACE
+    public FollowResponse follow(FollowRequest followRequest) {
         if(followRequest.getToFollow() == null) {
             throw new RuntimeException("[Bad Request] Request needs to have a target user.");
         }
-//        else if(followRequest.getAuthToken() == null) {
+//        else if(followRequest.getAuthToken() == null) { // TODO: This is here due to auth failure aws
 //            throw new RuntimeException("[Bad Request] Request needs to have an auth token.");
 //        }
-        return new FollowResponse();
+        User toFollow = userDAO.getUser(new UserRequest(followRequest.getToFollow(), followRequest.getAuthToken())).getUser();
+        User userThatFollows = userDAO.getUser(new UserRequest(followRequest.getCurrentUser(), followRequest.getAuthToken())).getUser();
+        return followDAO.follow(followRequest, userThatFollows, toFollow);
     }
 
     public UnfollowResponse unfollow(UnfollowRequest unfollowRequest) {
-        System.out.println(unfollowRequest.getToUnfollow());
         if (unfollowRequest.getToUnfollow() == null) {
             throw new RuntimeException("[Bad Request] Request needs to have a target user.");
         }
 //        else if(unfollowRequest.getAuthToken() == null) {
 //            throw new RuntimeException("[Bad Request] Request needs to have an auth token.");
 //        }
-        return new UnfollowResponse();
+        return followDAO.unfollow(unfollowRequest);
     }
 
     public IsFollowerResponse isFollower(IsFollowerRequest isFollowerRequest) {
@@ -122,6 +126,6 @@ public class FollowService {
         } else if (isFollowerRequest.getFolloweeAlias() == null) {
             throw new RuntimeException("[Bad Request] Request needs to have a user followee");
         }
-        return new IsFollowerResponse(new Random().nextInt() > 0);
+        return followDAO.isFollower(isFollowerRequest);
     }
 }
