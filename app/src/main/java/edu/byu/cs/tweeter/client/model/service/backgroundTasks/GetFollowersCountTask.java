@@ -30,7 +30,7 @@ public class GetFollowersCountTask extends GetCountTask {
     @Override
     protected void runTask() { // TODO: Check variables
         try {
-            FollowersCountRequest request = new FollowersCountRequest(getTargetUser().getAlias(), authToken.getToken());
+            FollowersCountRequest request = new FollowersCountRequest(getTargetUser().getAlias(), authToken);
             FollowersCountResponse response = facade.getFollowersCount(request, "\\getfollowerscount");
             if (response.isSuccess()) {
                 count = response.getCount();

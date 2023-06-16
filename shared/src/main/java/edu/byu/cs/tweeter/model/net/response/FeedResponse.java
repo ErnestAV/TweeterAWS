@@ -19,7 +19,7 @@ public class FeedResponse extends PagedResponse {
 
     public List<Status> getFeed() {return this.feed;}
 
-    public void setStory(List<Status> feed) {this.feed = feed;}
+    public void setFeed(List<Status> feed) {this.feed = feed;}
 
     @Override
     public boolean equals(Object param) {

@@ -2,9 +2,12 @@ package edu.byu.cs.tweeter.server.dao.dynamoDAO.bean;
 
 import java.io.Serializable;
 
+import edu.byu.cs.tweeter.model.domain.User;
 import edu.byu.cs.tweeter.model.net.response.FollowersCountResponse;
+import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbPartitionKey;
 
+@DynamoDbBean
 public class UserBean {
 
     private String firstName;
@@ -14,6 +17,16 @@ public class UserBean {
     private String password;
     private int followersCount;
     private int followeesCount;
+
+    public UserBean() {}
+
+    public UserBean(User user) {
+        this.firstName = user.getFirstName();
+        this.lastName = user.getLastName();
+        this.username = user.getAlias();
+        this.password = "password";
+        this.imageUrl = user.getImageUrl();
+    }
 
     public String getFirstName() {
         return firstName;

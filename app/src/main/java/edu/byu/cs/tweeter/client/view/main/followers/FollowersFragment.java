@@ -151,7 +151,7 @@ public class FollowersFragment extends Fragment implements PagedView<User> {
             super(itemView);
 
             userImage = itemView.findViewById(R.id.userImage);
-            userAlias = itemView.findViewById(R.id.userAlias);
+            userAlias = itemView.findViewById(R.id.currentUserAlias);
             userName = itemView.findViewById(R.id.userName);
 
             itemView.setOnClickListener(new View.OnClickListener() {

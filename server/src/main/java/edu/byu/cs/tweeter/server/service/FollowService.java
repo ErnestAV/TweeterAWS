@@ -54,13 +54,17 @@ public class FollowService {
             throw new RuntimeException("[Bad Request] Request needs to have a follower alias");
         } else if(request.getLimit() <= 0) {
             throw new RuntimeException("[Bad Request] Request needs to have a positive limit");
+        } else if (!userDAO.isTokenStillValid(request.getAuthToken())) {
+            return new FollowingResponse("Session expired. Log out.");
         }
         return followDAO.getFollowees(request);
     }
 
     public FollowersCountResponse getFollowersCount(FollowersCountRequest followersCountRequest) {
-        if(followersCountRequest.getTargetUser() == null) {
+        if (followersCountRequest.getTargetUser() == null) {
             throw new RuntimeException("[Bad Request] Request needs to have a target user.");
+        } else if (!userDAO.isTokenStillValid(followersCountRequest.getAuthToken())) {
+            return new FollowersCountResponse("Session expired. Log out.");
         }
         return userDAO.getFollowersCount(followersCountRequest);
     }
@@ -70,14 +74,17 @@ public class FollowService {
             throw new RuntimeException("[Bad Request] Requests needs to have a followee alias");
         } else if(followersRequest.getLimit() <= 0) {
             throw new RuntimeException("[Bad Request] Request needs to have a positive limit");
+        } else if (!userDAO.isTokenStillValid(followersRequest.getAuthToken())) {
+            return new FollowersResponse("Session expired. Log out.");
         }
-
         return followDAO.getFollowers(followersRequest);
     }
 
     public FollowingCountResponse getFollowingCount(FollowingCountRequest followingCountRequest) {
-        if(followingCountRequest.getTargetUser() == null) {
+        if (followingCountRequest.getTargetUser() == null) {
             throw new RuntimeException("[Bad Request] Request needs to have a target user.");
+        } else if (!userDAO.isTokenStillValid(followingCountRequest.getAuthToken())) {
+            return new FollowingCountResponse("Session expired. Log out.");
         }
         return userDAO.getFolloweeCount(followingCountRequest);
     }
@@ -88,20 +95,40 @@ public class FollowService {
         }
         else if(followRequest.getAuthToken() == null) {
             throw new RuntimeException("[Bad Request] Request needs to have an auth token.");
+        } else if (!userDAO.isTokenStillValid(followRequest.getAuthToken())) {
+            return new FollowResponse("Session expired. Log out.");
         }
+
         User toFollow = userDAO.getUser(new UserRequest(followRequest.getToFollow(), followRequest.getAuthToken())).getUser();
         User userThatFollows = userDAO.getUser(new UserRequest(followRequest.getCurrentUser(), followRequest.getAuthToken())).getUser();
-        return followDAO.follow(followRequest, userThatFollows, toFollow);
+        FollowResponse followResponse = followDAO.follow(followRequest, userThatFollows, toFollow);
+
+        if (followResponse.isSuccess()) {
+            userDAO.updateFolloweesCount(userThatFollows.getAlias(), 1);
+            userDAO.updateFollowersCount(toFollow.getAlias(), 1);
+        }
+
+        return followResponse;
     }
 
     public UnfollowResponse unfollow(UnfollowRequest unfollowRequest) {
         if (unfollowRequest.getToUnfollow() == null) {
             throw new RuntimeException("[Bad Request] Request needs to have a target user.");
         }
-        else if(unfollowRequest.getAuthToken() == null) {
+        else if (unfollowRequest.getAuthToken() == null) {
             throw new RuntimeException("[Bad Request] Request needs to have an auth token.");
+        } else if (!userDAO.isTokenStillValid(unfollowRequest.getAuthToken())) {
+            return new UnfollowResponse("Session expired. Log out.");
         }
-        return followDAO.unfollow(unfollowRequest);
+
+        UnfollowResponse unfollowResponse = followDAO.unfollow(unfollowRequest);
+
+        if (unfollowResponse.isSuccess()) {
+            userDAO.updateFollowersCount(unfollowRequest.getCurrentUser(), -1);
+            userDAO.updateFollowersCount(unfollowRequest.getToUnfollow(), -1);
+        }
+
+        return unfollowResponse;
     }
 
     public IsFollowerResponse isFollower(IsFollowerRequest isFollowerRequest) {
@@ -109,6 +136,8 @@ public class FollowService {
             throw new RuntimeException("[Bad Request] Request needs to have a user follower");
         } else if (isFollowerRequest.getFolloweeAlias() == null) {
             throw new RuntimeException("[Bad Request] Request needs to have a user followee");
+        } else if (!userDAO.isTokenStillValid(isFollowerRequest.getAuthToken())) {
+            return new IsFollowerResponse("Session expired. Log out.");
         }
         return followDAO.isFollower(isFollowerRequest);
     }

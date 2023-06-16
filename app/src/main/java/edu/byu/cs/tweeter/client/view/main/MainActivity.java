@@ -84,7 +84,7 @@ public class MainActivity extends AppCompatActivity implements StatusDialogFragm
         TextView userName = findViewById(R.id.userName);
         userName.setText(selectedUser.getName());
 
-        TextView userAlias = findViewById(R.id.userAlias);
+        TextView userAlias = findViewById(R.id.currentUserAlias);
         userAlias.setText(selectedUser.getAlias());
 
         ImageView userImageView = findViewById(R.id.userImage);

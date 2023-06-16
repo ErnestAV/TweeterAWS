@@ -42,10 +42,10 @@ public class IsFollowerTask extends AuthenticatedTask {
     @Override
     protected void runTask() {
         try {
-            IsFollowerRequest request = new IsFollowerRequest(follower.getAlias(), followee.getAlias(), authToken.getToken());
+            IsFollowerRequest request = new IsFollowerRequest(follower.getAlias(), followee.getAlias(), authToken);
             IsFollowerResponse response = facade.getIsFollower(request, "\\isfollower");
             if (response.isSuccess()) {
-                isFollower = response.isFollower();
+                isFollower = response.getIsFollower();
                 sendSuccessMessage();
             } else {
                 sendFailedMessage(response.getMessage());

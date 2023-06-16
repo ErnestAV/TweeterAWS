@@ -1,12 +1,14 @@
 package edu.byu.cs.tweeter.model.net.request;
 
+import edu.byu.cs.tweeter.model.domain.AuthToken;
+
 public class FollowersCountRequest {
     private String targetUser;
-    private String authToken;
+    private AuthToken authToken;
 
     private FollowersCountRequest() {}
 
-    public FollowersCountRequest(String targetUser, String authToken) {
+    public FollowersCountRequest(String targetUser, AuthToken authToken) {
 
         this.targetUser = targetUser;
         this.authToken = authToken;
@@ -20,11 +22,11 @@ public class FollowersCountRequest {
         this.targetUser = targetUser;
     }
 
-    public String getAuthToken() {
+    public AuthToken getAuthToken() {
         return authToken;
     }
 
-    public void setAuthToken(String authToken) {
+    public void setAuthToken(AuthToken authToken) {
         this.authToken = authToken;
     }
 }

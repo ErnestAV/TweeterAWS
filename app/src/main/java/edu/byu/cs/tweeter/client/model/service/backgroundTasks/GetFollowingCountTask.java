@@ -30,7 +30,7 @@ public class GetFollowingCountTask extends GetCountTask {
     @Override
     protected void runTask() throws IOException {
         try {
-            FollowingCountRequest request = new FollowingCountRequest(getTargetUser().getAlias(), authToken.getToken());
+            FollowingCountRequest request = new FollowingCountRequest(getTargetUser().getAlias(), authToken);
             FollowingCountResponse response = facade.getFolloweesCount(request, "\\getfollowingcount");
             if (response.isSuccess()) {
                 count = response.getCount();

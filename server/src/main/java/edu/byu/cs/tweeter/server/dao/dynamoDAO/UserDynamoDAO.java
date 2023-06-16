@@ -1,5 +1,6 @@
 package edu.byu.cs.tweeter.server.dao.dynamoDAO;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -35,7 +36,7 @@ import software.amazon.awssdk.services.dynamodb.model.DynamoDbException;
 public class UserDynamoDAO implements UserDAOInterface {
     private static final String TableName = "users";
     private static final String UserAttr = "username";
-    private static final String AuthenticationTableName = "[insert here when created]";
+    private static final String AuthenticationTableName = "AuthTable";
     private static final String TimeStampAttr = "timestamp";
     private final PBKDF2WithHmacSHA1Hashing encryptor = new PBKDF2WithHmacSHA1Hashing();
     static Region region = Region.US_EAST_1;
@@ -77,7 +78,9 @@ public class UserDynamoDAO implements UserDAOInterface {
 
     @Override
     public RegisterResponse register(RegisterRequest registerRequest) {
+        System.out.println("This is the user alias: " + registerRequest.getUsername());
         String imageURL = new S3DynamoBucket().storeImage(registerRequest.getImage(), registerRequest.getUsername());
+        System.out.println("This is the generated image URL for the s3 bucket: " + imageURL);
 
         String hashed;
         try {
@@ -118,7 +121,7 @@ public class UserDynamoDAO implements UserDAOInterface {
     public LogoutResponse logout(LogoutRequest logoutRequest) {
         assert logoutRequest.getAuthToken() != null;
         AuthBeanToken authBeanToken = new AuthBeanToken();
-        authBeanToken.setToken(logoutRequest.getAuthToken());
+        authBeanToken.setToken(logoutRequest.getAuthToken().getToken());
         deleteAuthentication(authBeanToken);
         return new LogoutResponse();
     }
@@ -126,7 +129,7 @@ public class UserDynamoDAO implements UserDAOInterface {
     @Override
     public FollowersCountResponse getFollowersCount(FollowersCountRequest followersCountRequest) {
         Key key = Key.builder()
-                .partitionValue(followersCountRequest.getAuthToken())
+                .partitionValue(followersCountRequest.getTargetUser())
                 .build();
         UserBean userBean = userBeanDynamoDbTable.getItem(key);
         return new FollowersCountResponse(userBean.getFollowersCount());
@@ -135,21 +138,52 @@ public class UserDynamoDAO implements UserDAOInterface {
     @Override
     public FollowingCountResponse getFolloweeCount(FollowingCountRequest followingCountRequest) {
         Key key = Key.builder()
-                .partitionValue(followingCountRequest.getAuthToken())
+                .partitionValue(followingCountRequest.getTargetUser())
                 .build();
         UserBean userBean = userBeanDynamoDbTable.getItem(key);
         return new FollowingCountResponse(userBean.getFolloweesCount());
     }
 
     @Override
+    public void updateFollowersCount(String userAlias, int toAdd) {
+        Key key = Key
+                .builder()
+                .partitionValue(userAlias)
+                .build();
+        UserBean userBean = userBeanDynamoDbTable.getItem(key);
+
+        if (userBean == null) {
+            throw new RuntimeException("[Internal Server Error] User was not found");
+        }
+
+        userBean.setFollowersCount(userBean.getFollowersCount() + toAdd);
+        userBeanDynamoDbTable.updateItem(userBean);
+    }
+
+    @Override
+    public void updateFolloweesCount(String userAlias, int toAdd) {
+        Key key = Key
+                .builder()
+                .partitionValue(userAlias)
+                .build();
+        UserBean userBean = userBeanDynamoDbTable.getItem(key);
+
+        if (userBean == null) {
+            throw new RuntimeException("[Internal Server Error] User was not found");
+        }
+
+        userBean.setFolloweesCount(userBean.getFolloweesCount() + toAdd);
+        userBeanDynamoDbTable.updateItem(userBean);
+    }
+
+    @Override
     public UserResponse getUser(UserRequest userRequest) {
-        DynamoDbTable<UserBean> table = dynamoDbEnhancedClient.table(TableName, TableSchema.fromBean(UserBean.class));
         Key key = Key.builder()
                 .partitionValue(userRequest.getUserAlias())
                 .build();
         UserBean userBean;
         try {
-            userBean = table.getItem(key);
+            userBean = userBeanDynamoDbTable.getItem(key);
         } catch (DynamoDbException e) {
             e.printStackTrace();
             throw new RuntimeException("[Internal Server Error] " + e.getMessage()); // Would it be internal server error or bad request?
@@ -165,18 +199,18 @@ public class UserDynamoDAO implements UserDAOInterface {
                 userBean.getImageUrl());
 
         AuthToken authToken = new AuthToken();
-        authToken.setToken(userRequest.getAuthToken());
+        authToken.setToken(userRequest.getAuthToken().getToken());
 
         return new UserResponse(user, authToken);
     }
 
-    public boolean isTokenStillValid(String authToken) {
+    public boolean isTokenStillValid(AuthToken authToken) {
         Key key = Key.builder()
-                .partitionValue(authToken)
+                .partitionValue(authToken.getToken())
                 .build();
         AuthBeanToken authBeanToken = authBeanTokenDynamoDbTable.getItem(key);
 
-        if (System.currentTimeMillis() - authBeanToken.getTimeStamp() < 120000) { // 2 minutes to be able to test it
+        if (System.currentTimeMillis() - authBeanToken.getTimeStamp() < 300000) { // 5 minutes to be able to test it
             authBeanToken.setTimeStamp(System.currentTimeMillis());
             authBeanTokenDynamoDbTable.putItem(authBeanToken);
             return true;
@@ -185,32 +219,53 @@ public class UserDynamoDAO implements UserDAOInterface {
         return false;
     }
 
-//    public void writePortionOfUserBeans(List<UserBean> userBeans) {
-//        if(userBeans.size() > 25)
-//            throw new RuntimeException("Too many users to write");
-//
-//
-//        DynamoDbTable<UserBean> table = client.table(TableName, TableSchema.fromBean(UserBean.class));
-//        WriteBatch.Builder<UserBean> writeBuilder = WriteBatch.builder(UserBean.class).mappedTableResource(table);
-//        for (UserBean item : userBeans) {
-//            writeBuilder.addPutItem(builder -> builder.item(item));
-//        }
-//        BatchWriteItemEnhancedRequest batchWriteItemEnhancedRequest = BatchWriteItemEnhancedRequest.builder()
-//                .writeBatches(writeBuilder.build()).build();
-//
-//        try {
-//            BatchWriteResult result = client.batchWriteItem(batchWriteItemEnhancedRequest);
-//
-//            // just hammer dynamodb again with anything that didn't get written this time
-//            if (result.unprocessedPutItemsForTable(table).size() > 0) {
-//                writePortionOfUserBeans(result.unprocessedPutItemsForTable(table));
-//            }
-//
-//        } catch (DynamoDbException e) {
-//            System.err.println(e.getMessage());
-//            System.exit(1);
-//        }
-//    }
+    //TODO: Is this correct?
+    @Override
+    public void addUserBatch(List<User> users) {
+        List<UserBean> batchToWrite = new ArrayList<>();
+        for (User u : users) {
+            UserBean dto = new UserBean(u);
+            batchToWrite.add(dto);
+
+            if (batchToWrite.size() == 25) {
+                // package this batch up and send to DynamoDB.
+                writePortionOfUserBeans(batchToWrite);
+                batchToWrite = new ArrayList<>();
+            }
+        }
+
+        // write any remaining
+        if (batchToWrite.size() > 0) {
+            // package this batch up and send to DynamoDB.
+            writePortionOfUserBeans(batchToWrite);
+        }
+    }
+    //TODO: Is this correct?
+    public void writePortionOfUserBeans(List<UserBean> userBeans) {
+        if(userBeans.size() > 25)
+            throw new RuntimeException("Too many users to write");
+
+        DynamoDbTable<UserBean> table = dynamoDbEnhancedClient.table(TableName, TableSchema.fromBean(UserBean.class));
+        WriteBatch.Builder<UserBean> writeBuilder = WriteBatch.builder(UserBean.class).mappedTableResource(table);
+        for (UserBean item : userBeans) {
+            writeBuilder.addPutItem(builder -> builder.item(item));
+        }
+        BatchWriteItemEnhancedRequest batchWriteItemEnhancedRequest = BatchWriteItemEnhancedRequest.builder()
+                .writeBatches(writeBuilder.build()).build();
+
+        try {
+            BatchWriteResult result = dynamoDbEnhancedClient.batchWriteItem(batchWriteItemEnhancedRequest);
+
+            // just hammer dynamodb again with anything that didn't get written this time
+            if (result.unprocessedPutItemsForTable(table).size() > 0) {
+                writePortionOfUserBeans(result.unprocessedPutItemsForTable(table));
+            }
+
+        } catch (DynamoDbException e) {
+            System.err.println(e.getMessage());
+            System.exit(1);
+        }
+    }
 
     public AuthToken putAuthentication(String userAlias) {
         AuthBeanToken authBeanToken = new AuthBeanToken();

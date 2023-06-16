@@ -36,8 +36,9 @@ public class StatusDynamoDAO implements StatusDAOInterface {
     private static final String FeedTable = "feed";
     private static final String StoryTable = "story";
 
-    private static final String UsernameAttr = "username";
-    private static final String DatetimeAttr = "dateTime";
+    private static final String UsernameAttr = "authorAlias";
+    private static final String DatetimeAttr = "timeStamp";
+    private static final String FeedAttr = "currentUserAlias";
 
     Region region = Region.US_EAST_1;
     DynamoDbClient ddb = DynamoDbClient.builder()
@@ -45,18 +46,22 @@ public class StatusDynamoDAO implements StatusDAOInterface {
             .build();
     DynamoDbEnhancedClient client = DynamoDbEnhancedClient.builder().dynamoDbClient(ddb).build();
 
+    DynamoDbTable<StoryBean> storyTable = client.table(StoryTable, TableSchema.fromBean(StoryBean.class));
+
+    DynamoDbTable<FeedBean> feedTable = client.table(FeedTable, TableSchema.fromBean(FeedBean.class));
+
+
     // TODO: Convert the objects returning from the requests
     @Override
-    public StoryResponse getStory(StoryRequest storyRequest) {
+    public StoryResponse getStory(StoryRequest storyRequest, User targetUser) {
         assert storyRequest.getLimit() > 0;
         assert storyRequest.getTargetUser() != null;
 
-        DynamoDbTable<StoryBean> table = client.table(StoryTable, TableSchema.fromBean(StoryBean.class));
 
         try {
-            QueryConditional queryConditional = QueryConditional.keyEqualTo(Key.builder()
-                    .partitionValue(storyRequest.getTargetUser())
-                    .build());
+            Key key = Key.builder().partitionValue(storyRequest.getTargetUser()).build();
+
+            QueryConditional queryConditional = QueryConditional.keyEqualTo(key);
 
             QueryEnhancedRequest.Builder queryEnhancedRequestBuilder = QueryEnhancedRequest.builder()
                     .queryConditional(queryConditional)
@@ -74,23 +79,26 @@ public class StatusDynamoDAO implements StatusDAOInterface {
 
             QueryEnhancedRequest queryEnhancedRequest = queryEnhancedRequestBuilder.build();
 
-            List<StoryBean> results = table.query(queryEnhancedRequest).items().stream()
+            List<StoryBean> storyBeans = storyTable.query(queryEnhancedRequest).items().stream()
                     .limit(storyRequest.getLimit()).collect(Collectors.toList());
 
-            List<Status> statuses = new ArrayList<>();
-
-            for (StoryBean bean : results) {
+            List<Status> statuses = new ArrayList<>(); // Convert beans to statuses
+            for (StoryBean bean : storyBeans) {
                 Status status = new Status(bean.getPost(), bean.getTimeStamp(),
                         bean.getUrls(), bean.getMentions(),  bean.getAuthorAlias());
+                status.setUser(targetUser);
                 statuses.add(status);
             }
 
-            boolean hasMorePages = statuses.size() >= storyRequest.getLimit();
+            boolean hasMorePages = true;
+
+            if (storyBeans.size() < storyRequest.getLimit()) {
+                hasMorePages = false;
+            }
 
             return new StoryResponse(statuses, hasMorePages);
-        } catch (DynamoDbException e) {
-            e.printStackTrace();
-            throw new RuntimeException("[Bad Request]. " + e.getMessage());
+        } catch (Exception e) {
+            return new StoryResponse(e.getMessage());
         }
     }
 
@@ -98,9 +106,6 @@ public class StatusDynamoDAO implements StatusDAOInterface {
     public FeedResponse getFeed(FeedRequest feedRequest) {
         assert feedRequest.getLimit() > 0;
         assert feedRequest.getTargetUser() != null;
-
-
-        DynamoDbTable<FeedBean> table = client.table(FeedTable, TableSchema.fromBean(FeedBean.class));
 
         try {
             QueryConditional queryConditional = QueryConditional.keyEqualTo(Key.builder()
@@ -114,7 +119,7 @@ public class StatusDynamoDAO implements StatusDAOInterface {
 
             if (feedRequest.getLastStatus() != null) {
                 Map<String, AttributeValue> startKey = new HashMap<>();
-                startKey.put(UsernameAttr, AttributeValue.builder().s(feedRequest.getTargetUser()).build());
+                startKey.put(FeedAttr, AttributeValue.builder().s(feedRequest.getTargetUser()).build());
                 startKey.put(DatetimeAttr, AttributeValue.builder().s(String.valueOf(feedRequest.getLastStatus().timestamp)).build());
 
                 queryEnhancedRequestBuilder.exclusiveStartKey(startKey);
@@ -122,7 +127,7 @@ public class StatusDynamoDAO implements StatusDAOInterface {
 
             QueryEnhancedRequest queryEnhancedRequest = queryEnhancedRequestBuilder.build();
 
-            List<FeedBean> results = table.query(queryEnhancedRequest).items().stream()
+            List<FeedBean> results = feedTable.query(queryEnhancedRequest).items().stream()
                     .limit(feedRequest.getLimit()).collect(Collectors.toList());
 
 
@@ -134,13 +139,15 @@ public class StatusDynamoDAO implements StatusDAOInterface {
                 statuses.add(status);
             }
 
-            boolean hasMorePages = statuses.size() >= feedRequest.getLimit();
+            boolean hasMorePages = true;
+
+            if (results.size() < feedRequest.getLimit()) {
+                hasMorePages = false;
+            }
 
             return new FeedResponse(statuses, hasMorePages);
-
-        } catch (DynamoDbException e) {
-            e.printStackTrace();
-            throw new RuntimeException("[Bad Request]. " + e.getMessage());
+        } catch (Exception e) {
+            return new FeedResponse(e.getMessage());
         }
     }
 
@@ -164,14 +171,14 @@ public class StatusDynamoDAO implements StatusDAOInterface {
         System.out.println("Timestamp class : " + postStatusRequest.getStatus().timestamp.getClass());
 
         StoryBean storyBeanToAdd = new StoryBean();
-        storyBeanToAdd.setAuthorAlias(postStatus.getUserAlias());
+        System.out.println("User alias: " + postStatus.getUser().getAlias());
+        storyBeanToAdd.setAuthorAlias(postStatus.getUser().getAlias());
         storyBeanToAdd.setPost(postStatus.getPost());
         storyBeanToAdd.setMentions(postStatus.getMentions());
         storyBeanToAdd.setUrls(postStatus.getUrls());
         storyBeanToAdd.setTimeStamp(postStatus.timestamp);
 
         try {
-            DynamoDbTable<StoryBean> storyTable = client.table(StoryTable, TableSchema.fromBean(StoryBean.class));
             System.out.println("story bean " + storyBeanToAdd.getPost());
             storyTable.putItem(storyBeanToAdd);
         } catch (DynamoDbException e) {
@@ -180,6 +187,31 @@ public class StatusDynamoDAO implements StatusDAOInterface {
         }
 
         return new PostStatusResponse();
+    }
+
+    @Override
+    public String postStatusToFeed(List<User> followers, Status status) {
+        String lastAlias = null;
+        FeedBean feedBeanToAdd = new FeedBean();
+        System.out.println("User alias: " + status.getUser().getAlias());
+        feedBeanToAdd.setAuthorAlias(status.getUser().getAlias());
+        feedBeanToAdd.setPost(status.getPost());
+        feedBeanToAdd.setMentions(status.getMentions());
+        feedBeanToAdd.setUrls(status.getUrls());
+        feedBeanToAdd.setTimeStamp(status.timestamp);
+
+        for (User follower : followers) {
+            try {
+                feedBeanToAdd.setCurrentUserAlias(follower.getAlias());
+                feedTable.putItem(feedBeanToAdd);
+                lastAlias = follower.getAlias();
+            } catch (DynamoDbException e) {
+                e.printStackTrace();
+                throw new RuntimeException("[Bad Request] " + e.getMessage());
+            }
+        }
+
+        return lastAlias;
     }
 
 //    public void postStatusToFeed(FeedBean statusToPost) {

@@ -1,11 +1,13 @@
 package edu.byu.cs.tweeter.server.dao.dynamoDAO.bean;
 
 import edu.byu.cs.tweeter.server.dao.dynamoDAO.FollowDynamoDAO;
+import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbPartitionKey;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbSecondaryPartitionKey;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbSecondarySortKey;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbSortKey;
 
+@DynamoDbBean
 public class FollowBean {
     private String follower_handle;
     private String followee_handle;
@@ -18,6 +20,9 @@ public class FollowBean {
 
     private String follower_image_url;
     private String followee_image_url;
+
+    public FollowBean() {
+    }
 
     public String getFollower_image_url() {
         return follower_image_url;

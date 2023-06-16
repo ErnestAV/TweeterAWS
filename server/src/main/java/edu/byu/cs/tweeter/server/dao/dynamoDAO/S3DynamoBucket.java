@@ -16,23 +16,22 @@ import edu.byu.cs.tweeter.server.dao.ImageDAOInterface;
 public class S3DynamoBucket implements ImageDAOInterface {
     private final AmazonS3 amazonS3 = AmazonS3ClientBuilder.standard().withRegion(
             "us-east-1").build();
-    private static final String BUCKET_URL = "https://[replace-to-bucket-name].s3.us-east-1.amazonaws.com/"; // TODO: FIX THIS THING
-    private static final String BUCKET_NAME = "[replace-to-bucket-name]"; // TODO: Replace bucket name
+    private static final String BUCKET_URL = "https://ernestotweeter.s3.us-east-1.amazonaws.com/";
+    private static final String BUCKET_NAME = "ernestotweeter";
 
     @Override
     public String storeImage(String image, String userAlias) {
         try {
-            if (!amazonS3.doesBucketExistV2(BUCKET_URL)) {
-                return null;
-            }
             byte[] decode = Base64.getDecoder().decode(image);
             ObjectMetadata metadata = new ObjectMetadata();
             ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(decode);
             metadata.setContentLength(decode.length);
             metadata.setContentType("image/jpeg");
-            PutObjectRequest request = new PutObjectRequest(BUCKET_URL, userAlias, byteArrayInputStream, metadata)
+            System.out.println("Before put object request");
+            PutObjectRequest request = new PutObjectRequest(BUCKET_NAME, userAlias, byteArrayInputStream, metadata)
                     .withCannedAcl(CannedAccessControlList.PublicRead);
             amazonS3.putObject(request);
+            System.out.println("Made it here! Returning...");
             return BUCKET_URL + userAlias;
         } catch (SdkClientException e) {
             e.printStackTrace();

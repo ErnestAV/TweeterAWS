@@ -50,6 +50,7 @@ public class FollowService extends Service {
     }
 
     public void unfollowTask(User selectedUser, UnfollowObserver unfollowObserver) {
+        System.out.println("Current user from unfollow task" + Cache.getInstance().getCurrUser());
         UnfollowTask unfollowTask = new UnfollowTask(Cache.getInstance().getCurrUserAuthToken(),
                 Cache.getInstance().getCurrUser(), selectedUser, new NotificationHandler(unfollowObserver));
         executeTask(unfollowTask);

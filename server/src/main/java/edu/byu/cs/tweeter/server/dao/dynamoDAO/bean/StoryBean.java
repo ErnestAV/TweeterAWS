@@ -3,9 +3,11 @@ package edu.byu.cs.tweeter.server.dao.dynamoDAO.bean;
 import java.io.Serializable;
 import java.util.List;
 
+import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbPartitionKey;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbSortKey;
 
+@DynamoDbBean
 public class StoryBean {
     private String authorAlias;
     private long timeStamp;

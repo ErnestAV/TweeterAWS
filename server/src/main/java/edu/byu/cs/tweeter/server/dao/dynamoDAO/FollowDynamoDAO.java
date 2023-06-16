@@ -19,6 +19,7 @@ import edu.byu.cs.tweeter.model.net.response.IsFollowerResponse;
 import edu.byu.cs.tweeter.model.net.response.UnfollowResponse;
 import edu.byu.cs.tweeter.server.dao.FollowDAOInterface;
 import edu.byu.cs.tweeter.server.dao.dynamoDAO.bean.FollowBean;
+import edu.byu.cs.tweeter.server.dao.dynamoDAO.bean.UserBean;
 import software.amazon.awssdk.core.pagination.sync.SdkIterable;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbIndex;
@@ -40,20 +41,19 @@ import software.amazon.awssdk.services.dynamodb.model.DynamoDbException;
 public class FollowDynamoDAO implements FollowDAOInterface {
 
     //TODO: Redo DynamoDB exercise to have the follows table
-
     private static final String TableName = "follows";
     public static final String IndexName = "follows_index";
 
     private static final String FollowerAttr = "follower_handle";
     private static final String FolloweeAttr = "followee_handle";
 
-    // TODO: Import aws library somehow
     Region region = Region.US_EAST_1;
     DynamoDbClient dynamoDbClient = DynamoDbClient.builder()
             .region(region)
             .build();
-    DynamoDbEnhancedClient dynamoDbEnhancedClient = DynamoDbEnhancedClient.builder().dynamoDbClient(dynamoDbClient).build();
-
+    DynamoDbEnhancedClient dynamoDbEnhancedClient = DynamoDbEnhancedClient.builder()
+            .dynamoDbClient(dynamoDbClient)
+            .build();
     private static boolean isNonEmptyString(String value) {
         return (value != null && value.length() > 0);
     }
@@ -259,11 +259,15 @@ public class FollowDynamoDAO implements FollowDAOInterface {
         DynamoDbTable<FollowBean> dynamoDbTable = dynamoDbEnhancedClient.table(TableName, TableSchema.fromBean(FollowBean.class));
 
         try {
+            System.out.println("From FollowDynamoDAO:");
+            System.out.println("Current user: " + unfollowRequest.getCurrentUser() + " | " +
+            "User to unfollow: " + unfollowRequest.getToUnfollow());
             Key key = Key.builder()
                     .partitionValue(unfollowRequest.getCurrentUser()).sortValue(unfollowRequest.getToUnfollow())
                     .build();
             dynamoDbTable.deleteItem(key);
         } catch (DynamoDbException e) {
+            System.out.println("Did not work");
             e.printStackTrace();
             throw new RuntimeException("[Bad Request] " + e.getMessage());
         }
@@ -293,29 +297,54 @@ public class FollowDynamoDAO implements FollowDAOInterface {
         }
     }
 
-//    public void writePortionOfFollowBeans(List<FollowBean> followBeans) {
-//        if(followBeans.size() > 25)
-//            throw new RuntimeException("Too many follows to write");
-//
-//        DynamoDbTable<FollowBean> table = client.table(TableName, TableSchema.fromBean(FollowBean.class));
-//        WriteBatch.Builder<FollowBean> writeBuilder = WriteBatch.builder(FollowBean.class).mappedTableResource(table);
-//        for (FollowBean item : followBeans) {
-//            writeBuilder.addPutItem(builder -> builder.item(item));
-//        }
-//        BatchWriteItemEnhancedRequest batchWriteItemEnhancedRequest = BatchWriteItemEnhancedRequest.builder()
-//                .writeBatches(writeBuilder.build()).build();
-//
-//        try {
-//            BatchWriteResult result = client.batchWriteItem(batchWriteItemEnhancedRequest);
-//
-//            // just hammer dynamodb again with anything that didn't get written this time
-//            if (result.unprocessedPutItemsForTable(table).size() > 0) {
-//                writePortionOfFollowBeans(result.unprocessedPutItemsForTable(table));
-//            }
-//
-//        } catch (DynamoDbException e) {
-//            System.err.println(e.getMessage());
-//            System.exit(1);
-//        }
-//    }
+    //TODO: FIGURE THIS OUT
+    @Override
+    public void addFollowersBatch(List<String> followers, String followTarget) {
+        List<FollowBean> batchToWrite = new ArrayList<>();
+        for (String follower : followers) {
+            FollowBean dto = new FollowBean();
+            dto.setFollower_handle(follower); //TODO: Double check
+            dto.setFollowee_handle(followTarget); //TODO: Double check
+            batchToWrite.add(dto);
+
+            if (batchToWrite.size() == 25) {
+                // package this batch up and send to DynamoDB.
+                writePortionOfFollowBeans(batchToWrite);
+                batchToWrite = new ArrayList<>();
+            }
+        }
+
+        // write any remaining
+        if (batchToWrite.size() > 0) {
+            // package this batch up and send to DynamoDB.
+            writePortionOfFollowBeans(batchToWrite);
+        }
+    }
+
+    //TODO: FIGURE THIS OUT
+    public void writePortionOfFollowBeans(List<FollowBean> followBeans) {
+        if(followBeans.size() > 25)
+            throw new RuntimeException("Too many follows to write");
+
+        DynamoDbTable<FollowBean> table = dynamoDbEnhancedClient.table(TableName, TableSchema.fromBean(FollowBean.class));
+        WriteBatch.Builder<FollowBean> writeBuilder = WriteBatch.builder(FollowBean.class).mappedTableResource(table);
+        for (FollowBean item : followBeans) {
+            writeBuilder.addPutItem(builder -> builder.item(item));
+        }
+        BatchWriteItemEnhancedRequest batchWriteItemEnhancedRequest = BatchWriteItemEnhancedRequest.builder()
+                .writeBatches(writeBuilder.build()).build();
+
+        try {
+            BatchWriteResult result = dynamoDbEnhancedClient.batchWriteItem(batchWriteItemEnhancedRequest);
+
+            // just hammer dynamodb again with anything that didn't get written this time
+            if (result.unprocessedPutItemsForTable(table).size() > 0) {
+                writePortionOfFollowBeans(result.unprocessedPutItemsForTable(table));
+            }
+
+        } catch (DynamoDbException e) {
+            System.err.println(e.getMessage());
+            System.exit(1);
+        }
+    }
 }

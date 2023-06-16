@@ -35,7 +35,7 @@ public class GetUserTask extends AuthenticatedTask {
     @Override
     protected void runTask() {
         try {
-            UserRequest request = new UserRequest(alias, authToken.getToken());
+            UserRequest request = new UserRequest(alias, authToken);
             UserResponse response = facade.getUser(request, "\\getuser");
             if (response.isSuccess()) {
                 user = response.getUser();

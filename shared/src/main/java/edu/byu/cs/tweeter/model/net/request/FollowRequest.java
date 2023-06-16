@@ -1,14 +1,16 @@
 package edu.byu.cs.tweeter.model.net.request;
 
+import edu.byu.cs.tweeter.model.domain.AuthToken;
+
 public class FollowRequest {
 
     private String currentUser;
     private String toFollow;
-    private String authToken;
+    private AuthToken authToken;
 
     private FollowRequest() {}
 
-    public FollowRequest(String currentUser, String toFollow, String authToken) {
+    public FollowRequest(String currentUser, String toFollow, AuthToken authToken) {
         this.currentUser = currentUser;
         this.toFollow = toFollow;
         this.authToken = authToken;
@@ -26,11 +28,11 @@ public class FollowRequest {
         this.toFollow = toFollow;
     }
 
-    public String getAuthToken() {
+    public AuthToken getAuthToken() {
         return authToken;
     }
 
-    public void setAuthToken(String authToken) {
+    public void setAuthToken(AuthToken authToken) {
         this.authToken = authToken;
     }
 }

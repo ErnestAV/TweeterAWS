@@ -32,7 +32,7 @@ public class FollowTask extends AuthenticatedTask {
     protected void runTask() { // TODO: Why is the authToken missing
         try {
             // PASS CURRENT USER INTO UNFOLLOW REQUEST
-            FollowRequest request = new FollowRequest(currentUser.getAlias(), followee.getAlias(), authToken.getToken());
+            FollowRequest request = new FollowRequest(currentUser.getAlias(), followee.getAlias(), authToken);
             FollowResponse response = facade.follow(request, "\\getfollow");
             if (response.isSuccess()) {
                 sendSuccessMessage();

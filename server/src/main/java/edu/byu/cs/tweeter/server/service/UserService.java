@@ -1,18 +1,16 @@
 package edu.byu.cs.tweeter.server.service;
 
-import edu.byu.cs.tweeter.model.domain.AuthToken;
-import edu.byu.cs.tweeter.model.domain.User;
 import edu.byu.cs.tweeter.model.net.request.LoginRequest;
 import edu.byu.cs.tweeter.model.net.request.LogoutRequest;
 import edu.byu.cs.tweeter.model.net.request.RegisterRequest;
 import edu.byu.cs.tweeter.model.net.request.UserRequest;
 import edu.byu.cs.tweeter.model.net.response.LoginResponse;
 import edu.byu.cs.tweeter.model.net.response.LogoutResponse;
+import edu.byu.cs.tweeter.model.net.response.PostStatusResponse;
 import edu.byu.cs.tweeter.model.net.response.RegisterResponse;
 import edu.byu.cs.tweeter.model.net.response.UserResponse;
 import edu.byu.cs.tweeter.server.dao.MainDAOFactoryInterface;
 import edu.byu.cs.tweeter.server.dao.UserDAOInterface;
-import edu.byu.cs.tweeter.util.FakeData;
 
 public class UserService {
 
@@ -38,11 +36,16 @@ public class UserService {
         }
         else if(userRequest.getAuthToken() == null) {
             throw new RuntimeException("[Bad Request] Missing an Authtoken.");
+        } else if (!userDAO.isTokenStillValid(userRequest.getAuthToken())) {
+            return new UserResponse("Session expired. Log out.");
         }
         return userDAO.getUser(userRequest);
     }
 
     public LogoutResponse logout(LogoutRequest logoutRequest) {
+        if (!userDAO.isTokenStillValid(logoutRequest.getAuthToken())) {
+            return new LogoutResponse("Session expired. Log out.");
+        }
         return userDAO.logout(logoutRequest);
     }
 

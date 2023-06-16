@@ -34,7 +34,8 @@ public class UnfollowTask extends AuthenticatedTask {
     protected void runTask() {
         try {
             // PASS CURRENT USER INTO UNFOLLOW REQUEST
-            UnfollowRequest request = new UnfollowRequest(currentUser.getAlias(), followee.getAlias(), authToken.getToken());
+            System.out.println("From unfollow task RUN TASK: " + currentUser);
+            UnfollowRequest request = new UnfollowRequest(currentUser.getAlias(), followee.getAlias(), authToken);
             UnfollowResponse response = facade.unfollow(request, "\\getunfollow");
             if (response.isSuccess()) {
                 sendSuccessMessage();
