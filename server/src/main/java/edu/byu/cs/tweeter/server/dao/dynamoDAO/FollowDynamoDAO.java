@@ -19,7 +19,6 @@ import edu.byu.cs.tweeter.model.net.response.IsFollowerResponse;
 import edu.byu.cs.tweeter.model.net.response.UnfollowResponse;
 import edu.byu.cs.tweeter.server.dao.FollowDAOInterface;
 import edu.byu.cs.tweeter.server.dao.dynamoDAO.bean.FollowBean;
-import edu.byu.cs.tweeter.server.dao.dynamoDAO.bean.UserBean;
 import software.amazon.awssdk.core.pagination.sync.SdkIterable;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbIndex;
@@ -39,8 +38,6 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.DynamoDbException;
 
 public class FollowDynamoDAO implements FollowDAOInterface {
-
-    //TODO: Redo DynamoDB exercise to have the follows table
     private static final String TableName = "follows";
     public static final String IndexName = "follows_index";
 
@@ -155,76 +152,6 @@ public class FollowDynamoDAO implements FollowDAOInterface {
 
         return new FollowersResponse(responseFollowers, hasMorePages);
     }
-
-//    public List<User> getAllFollowers(String username) {
-//        DynamoDbIndex<FollowBean> index = dynamoDbEnhancedClient.table(TableName, TableSchema.fromBean(FollowBean.class)).index(IndexName);
-//        Key key = Key.builder()
-//                .partitionValue(username)
-//                .build();
-//
-//        QueryEnhancedRequest.Builder requestBuilder = QueryEnhancedRequest.builder()
-//                .queryConditional(QueryConditional.keyEqualTo(key));
-//
-//
-//        QueryEnhancedRequest queryRequest = requestBuilder.build();
-//
-//        List<FollowBean> follows = new ArrayList<>();
-//
-//        SdkIterable<Page<FollowBean>> results2 = index.query(queryRequest);
-//        PageIterable<FollowBean> pages = PageIterable.create(results2);
-//        // limit 1 page, with pageSize items
-//        pages.stream()
-//                .limit(1)
-//                .forEach(visitsPage -> visitsPage.items().forEach(v -> follows.add(v)));
-//
-//        List<String> followers = new ArrayList<>();
-//        for (FollowBean follow:
-//                follows) {
-//            followers.add(follow.getFollower_handle());
-//        }
-//
-//        List<User> responseFollowers = new ArrayList<>();
-//        for (String follower : followers) {
-//            try {
-//                User userToAdd = new User(follower(), follower.getFollower_lastName(), follower.getFollower_handle(), follower.getFollower_image_url());
-//                responseFollowers.add(new UserDynamoDAO().getUser(follower));
-//            } catch (DynamoDbException e) {
-//                System.err.println(e.getMessage());
-//                throw new RuntimeException("[Internal Server Error]. " + e.getMessage());
-//            }
-//        }
-//
-//        return responseFollowers;
-//    }
-
-//    public List<String> getAllFollowerUsernames(String username) {
-//        DynamoDbIndex<FollowBean> index = client.table(TableName, TableSchema.fromBean(FollowBean.class)).index(IndexName);
-//        Key key = Key.builder()
-//                .partitionValue(username)
-//                .build();
-//
-//        QueryEnhancedRequest.Builder requestBuilder = QueryEnhancedRequest.builder()
-//                .queryConditional(QueryConditional.keyEqualTo(key));
-//
-//
-//        QueryEnhancedRequest queryRequest = requestBuilder.build();
-//
-//        List<FollowBean> follows = new ArrayList<>();
-//
-//        SdkIterable<Page<FollowBean>> results2 = index.query(queryRequest);
-//        PageIterable<FollowBean> pages = PageIterable.create(results2);
-//        pages.stream()
-//                .limit(1)
-//                .forEach(visitsPage -> visitsPage.items().forEach(iterator -> follows.add(iterator)));
-//
-//        List<String> followers = new ArrayList<>();
-//        for (FollowBean follow:
-//                follows) {
-//            followers.add(follow.getFollower_handle());
-//        }
-//
-//        return followers;
-//    }
 
     /** FOLLOW / UNFOLLOW / ISFOLLOW **/
 

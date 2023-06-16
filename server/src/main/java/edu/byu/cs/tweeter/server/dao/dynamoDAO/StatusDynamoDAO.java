@@ -1,5 +1,7 @@
 package edu.byu.cs.tweeter.server.dao.dynamoDAO;
 
+import com.google.gson.Gson;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -8,6 +10,7 @@ import java.util.stream.Collectors;
 
 import edu.byu.cs.tweeter.model.domain.Status;
 import edu.byu.cs.tweeter.model.domain.User;
+import edu.byu.cs.tweeter.model.net.request.FeedMessage;
 import edu.byu.cs.tweeter.model.net.request.FeedRequest;
 import edu.byu.cs.tweeter.model.net.request.PostStatusRequest;
 import edu.byu.cs.tweeter.model.net.request.StoryRequest;
@@ -22,11 +25,8 @@ import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import software.amazon.awssdk.enhanced.dynamodb.Key;
 import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
-import software.amazon.awssdk.enhanced.dynamodb.model.BatchWriteItemEnhancedRequest;
-import software.amazon.awssdk.enhanced.dynamodb.model.BatchWriteResult;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryEnhancedRequest;
-import software.amazon.awssdk.enhanced.dynamodb.model.WriteBatch;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
@@ -181,6 +181,8 @@ public class StatusDynamoDAO implements StatusDAOInterface {
         try {
             System.out.println("story bean " + storyBeanToAdd.getPost());
             storyTable.putItem(storyBeanToAdd);
+            Gson gson = new Gson();
+            SQS.postStatusQueueHandler(gson.toJson(postStatusRequest.getStatus()));
         } catch (DynamoDbException e) {
             e.printStackTrace();
             throw new RuntimeException("[Bad Request] " + e.getMessage());
@@ -190,8 +192,7 @@ public class StatusDynamoDAO implements StatusDAOInterface {
     }
 
     @Override
-    public String postStatusToFeed(List<User> followers, Status status) {
-        String lastAlias = null;
+    public void postStatusToFeed(List<String> followers, Status status) {
         FeedBean feedBeanToAdd = new FeedBean();
         System.out.println("User alias: " + status.getUser().getAlias());
         feedBeanToAdd.setAuthorAlias(status.getUser().getAlias());
@@ -200,52 +201,31 @@ public class StatusDynamoDAO implements StatusDAOInterface {
         feedBeanToAdd.setUrls(status.getUrls());
         feedBeanToAdd.setTimeStamp(status.timestamp);
 
-        for (User follower : followers) {
+        for (String follower : followers) {
             try {
-                feedBeanToAdd.setCurrentUserAlias(follower.getAlias());
+                feedBeanToAdd.setCurrentUserAlias(follower);
                 feedTable.putItem(feedBeanToAdd);
-                lastAlias = follower.getAlias();
             } catch (DynamoDbException e) {
                 e.printStackTrace();
                 throw new RuntimeException("[Bad Request] " + e.getMessage());
             }
         }
-
-        return lastAlias;
     }
 
-//    public void postStatusToFeed(FeedBean statusToPost) {
-//        DynamoDbTable<FeedBean> feedTable = client.table(FeedTable, TableSchema.fromBean(FeedBean.class));
-//        try {
-//            feedTable.putItem(statusToPost);
-//        } catch (DynamoDbException e) {
-//            e.printStackTrace();
-//            throw new RuntimeException("[Bad Request] " + e.getMessage());
-//        }
-//    }
+    public String addFollowersToSQS(List<User> followers, Status status) {
+        List<String> followersAlias = new ArrayList<>();
+        String lastFollowerAlias = "";
+        FeedMessage feedMessage = new FeedMessage();
+        Gson gson = new Gson();
+        feedMessage.setStatus(gson.toJson(status));
 
-//    public void writePortionOfFeedBeans(List<FeedBean> feedBeans) {
-//        if(feedBeans.size() > 25)
-//            throw new RuntimeException("Too many users to write");
-//
-//
-//        DynamoDbTable<FeedBean> table = client.table(FeedTable, TableSchema.fromBean(FeedBean.class));
-//        WriteBatch.Builder<FeedBean> writeBuilder = WriteBatch.builder(FeedBean.class).mappedTableResource(table);
-//        for (FeedBean item : feedBeans) {
-//            writeBuilder.addPutItem(builder -> builder.item(item));
-//        }
-//        BatchWriteItemEnhancedRequest batchWriteItemEnhancedRequest = BatchWriteItemEnhancedRequest.builder()
-//                .writeBatches(writeBuilder.build()).build();
-//
-//        try {
-//            BatchWriteResult result = client.batchWriteItem(batchWriteItemEnhancedRequest);
-//            if (result.unprocessedPutItemsForTable(table).size() > 0) {
-//                writePortionOfFeedBeans(result.unprocessedPutItemsForTable(table));
-//            }
-//
-//        } catch (DynamoDbException e) {
-//            System.err.println(e.getMessage());
-//            System.exit(1);
-//        }
-//    }
+        for (User user: followers) {
+            followersAlias.add(user.getAlias());
+            lastFollowerAlias = user.getAlias();
+        }
+
+        feedMessage.setFollowersAliases(followersAlias);
+        SQS.updateFeedQueueHandler(gson.toJson(feedMessage));
+        return lastFollowerAlias;
+    }
 }

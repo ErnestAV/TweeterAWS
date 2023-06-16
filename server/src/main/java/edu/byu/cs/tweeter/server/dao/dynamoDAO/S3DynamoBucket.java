@@ -8,7 +8,6 @@ import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 
 import java.io.ByteArrayInputStream;
-import java.nio.file.Paths;
 import java.util.Base64;
 
 import edu.byu.cs.tweeter.server.dao.ImageDAOInterface;

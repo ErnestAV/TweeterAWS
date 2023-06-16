@@ -24,6 +24,9 @@ dependencies {
     implementation group: 'software.amazon.awssdk', name: 'dynamodb-enhanced', version: '2.20.42'
     // https://mvnrepository.com/artifact/software.amazon.awssdk/sqs
     implementation group: 'software.amazon.awssdk', name: 'sqs', version: '2.20.42'
+    implementation 'com.amazonaws:aws-java-sdk-core:1.12.488'
+    implementation 'com.amazonaws:aws-java-sdk-sqs:1.12.488'
+    implementation 'com.amazonaws:aws-lambda-java-events:3.11.2'
     // https://mvnrepository.com/artifact/software.amazon.awssdk/s3
     testImplementation group: 'software.amazon.awssdk', name: 's3', version: '2.20.42'
     // https://mvnrepository.com/artifact/org.bouncycastle/bcprov-jdk15on

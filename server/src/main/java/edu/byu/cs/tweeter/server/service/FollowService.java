@@ -1,8 +1,5 @@
 package edu.byu.cs.tweeter.server.service;
 
-import java.util.List;
-import java.util.Random;
-
 import edu.byu.cs.tweeter.model.domain.User;
 import edu.byu.cs.tweeter.model.net.request.FollowRequest;
 import edu.byu.cs.tweeter.model.net.request.FollowersCountRequest;
@@ -23,9 +20,6 @@ import edu.byu.cs.tweeter.server.dao.FollowDAO;
 import edu.byu.cs.tweeter.server.dao.FollowDAOInterface;
 import edu.byu.cs.tweeter.server.dao.MainDAOFactoryInterface;
 import edu.byu.cs.tweeter.server.dao.UserDAOInterface;
-import edu.byu.cs.tweeter.server.dao.dynamoDAO.FollowDynamoDAO;
-import edu.byu.cs.tweeter.util.FakeData;
-import edu.byu.cs.tweeter.util.Pair;
 
 /**
  * Contains the business logic for getting the users a user is following.

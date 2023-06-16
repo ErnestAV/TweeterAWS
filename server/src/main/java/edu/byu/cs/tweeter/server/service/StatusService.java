@@ -1,19 +1,17 @@
 package edu.byu.cs.tweeter.server.service;
 
-import java.util.ArrayList;
-import java.util.List;
+import com.google.gson.Gson;
 
 import edu.byu.cs.tweeter.model.domain.Status;
 import edu.byu.cs.tweeter.model.domain.User;
+import edu.byu.cs.tweeter.model.net.request.FeedMessage;
 import edu.byu.cs.tweeter.model.net.request.FeedRequest;
 import edu.byu.cs.tweeter.model.net.request.FollowersRequest;
 import edu.byu.cs.tweeter.model.net.request.PostStatusRequest;
 import edu.byu.cs.tweeter.model.net.request.StoryRequest;
 import edu.byu.cs.tweeter.model.net.request.UserRequest;
 import edu.byu.cs.tweeter.model.net.response.FeedResponse;
-import edu.byu.cs.tweeter.model.net.response.FollowResponse;
 import edu.byu.cs.tweeter.model.net.response.FollowersResponse;
-import edu.byu.cs.tweeter.model.net.response.FollowingResponse;
 import edu.byu.cs.tweeter.model.net.response.PostStatusResponse;
 import edu.byu.cs.tweeter.model.net.response.StoryResponse;
 import edu.byu.cs.tweeter.model.net.response.UserResponse;
@@ -21,7 +19,6 @@ import edu.byu.cs.tweeter.server.dao.FollowDAOInterface;
 import edu.byu.cs.tweeter.server.dao.MainDAOFactoryInterface;
 import edu.byu.cs.tweeter.server.dao.StatusDAOInterface;
 import edu.byu.cs.tweeter.server.dao.UserDAOInterface;
-import edu.byu.cs.tweeter.util.FakeData;
 
 public class StatusService {
     private StatusDAOInterface statusDAO;
@@ -60,20 +57,27 @@ public class StatusService {
             return new PostStatusResponse("Session expired. Log out.");
         }
 
-        PostStatusResponse postStatusResponse = statusDAO.postStatus(postStatusRequest);
+        return statusDAO.postStatus(postStatusRequest);
+    }
 
-        // This is to update the feeds of the followers
-        Status status = postStatusRequest.getStatus();
+    public void postFollowersBatch(Status status) {
         FollowersRequest followersRequest = new FollowersRequest(null, status.user.getAlias(), 25, null);
         FollowersResponse followersResponse = followDAO.getFollowers(followersRequest);
+
         String lastFollowerAlias;
         boolean hasMorePages;
+
         do {
             hasMorePages = followersResponse.getHasMorePages();
-            lastFollowerAlias = statusDAO.postStatusToFeed(followersResponse.getFollowers(), status);
+            lastFollowerAlias = statusDAO.addFollowersToSQS(followersResponse.getFollowers(), status);
             followersResponse = followDAO.getFollowers(new FollowersRequest(null, status.user.getAlias(), 25, lastFollowerAlias));
         } while (hasMorePages);
-        return postStatusResponse;
+    }
+
+    public void pushStatusToFeed(String message) {
+        Gson gson = new Gson();
+        FeedMessage feedMessage = gson.fromJson(message, FeedMessage.class);
+        statusDAO.postStatusToFeed(feedMessage.getFollowersAliases(), gson.fromJson(feedMessage.getStatus(), Status.class));
     }
 
     public StoryResponse getStory(StoryRequest storyRequest) {
